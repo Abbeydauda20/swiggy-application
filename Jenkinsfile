@@ -6,6 +6,13 @@ pipeline {
     }
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
+        APP_NAME = "swiggy-application-pipeline"
+        RELEASE = "1.0.0"
+        DOCKER_USER = "abbeydauda"
+        DOCKER_PASS = "dockerhub" // Use double quotes for possible interpolation
+        IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}" // No need for + and ""
+        IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
+        JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
     }
     stages {
         stage('clean workspace') {
@@ -15,21 +22,23 @@ pipeline {
         }
         stage('Checkout from Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/Abbeydauda20/wiggy-application.git'
+                git branch: 'main', url: 'https://github.com/Abbeydauda20/swiggy-application.git'
             }
         }
         stage("Sonarqube Analysis") {
             steps {
                 withSonarQubeEnv('SonarQube-Server') {
-                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=swiggy-CICD \
-                    -Dsonar.projectKey=swiggy-CICD'''
+                    sh """$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=swiggy-application-CI \
+                    -Dsonar.projectKey=swiggy-CICD"""
                 }
             }
         }
         stage("Quality Gate") {
             steps {
                 script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'SonarQube-Token'
+                    script {
+                        waitForQualityGate(abortPipeline: false, credentialsId: 'SonarQube-Token')
+                    }
                 }
             }
         }
@@ -39,49 +48,9 @@ pipeline {
             }
         }
         stage('TRIVY FS SCAN') {
-             steps {
-                 sh "trivy fs . > trivyfs.txt"
-             }
-         }
-         stage("Docker Build & Push"){
-             steps{
-                 script{
-                   withDockerRegistry(credentialsId: 'dockerhub', toolName: 'docker'){   
-                      sh "docker build -t swiggy-clone ."
-                      sh "docker tag swiggy-clone abbeydauda/swiggy-clone:1.0 "
-                      sh "docker push abbeydauda/swiggy-clone:1.0 "
-                    }
-                }
+            steps {
+                sh "trivy fs . > trivyfs.txt"
             }
-        }
-        stage("TRIVY Image Scan"){
-            steps{
-                sh "trivy image abbeydauda/swiggy-clone:latest > trivyimage.txt" 
-            }
-        }
-        stage('Deploy to Kubernets'){
-            steps{
-                script{
-                    dir('Kubernetes') {
-                      withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kubernetes', namespace: '', restrictKubeConfigAccess: false, serverUrl: '') {
-                      sh 'kubectl delete --all pods'
-                      sh 'kubectl apply -f deployment.yml'
-                      sh 'kubectl apply -f service.yml'
-                      }   
-                    }
-                }
-            }
-        }
-    }
-    post {
-     always {
-        emailext attachLog: true,
-            subject: "'${currentBuild.result}'",
-            body: "Project: ${env.JOB_NAME}<br/>" +
-                "Build Number: ${env.BUILD_NUMBER}<br/>" +
-                "URL: ${env.BUILD_URL}<br/>",
-            to: 'abbeydauda20@gmail.com',                              
-            attachmentsPattern: 'trivyfs.txt,trivyimage.txt'
         }
     }
 }
