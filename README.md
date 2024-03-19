@@ -385,7 +385,7 @@ pipeline {
              steps{
                  script{
                    withDockerRegistry(credentialsId: 'dockerhub', toolName: 'docker'){   
-                      sh "docker build -t youtube-clone ."
+                      sh "docker build -t swiggy-clone ."
                       sh "docker tag swiggy-clone abbeydauda/swiggy-clone:latest "
                       sh "docker push abbeydauda/swiggy-clone:latest "
                     }
