@@ -155,7 +155,7 @@ terraform {
     }
   }
 }
-# Configure the AWS Provider
+# Configure the AWS Provider on Jenkins server
 provider "aws" {
   region = "ap-south-1"     #change region as per you requirement
 }
