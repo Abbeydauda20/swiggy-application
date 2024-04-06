@@ -1,47 +1,47 @@
-pipeline {
-    agent any
-    tools {
-        jdk 'jdk17'
-        nodejs 'node 16'
-    }
-    environment {
-        SCANNER_HOME = tool 'sonar-scanner'    
-    }
-    stages {
-        stage('clean workspace') {
-            steps {
-                cleanWs()
-            }
-        }
-        stage('Checkout from Git') {
-            steps {
-                git branch: 'main', url: 'https://github.com/Abbeydauda20/swiggy-clone-app.git'
-            }
-        }
-        stage("Sonarqube Analysis") {
-            steps {
-                withSonarQubeEnv('SonarQube-Server') {
-                    sh """$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=swiggy-CICD \
-                    -Dsonar.projectKey=swiggy-CICD"""
-                }
-            }
-        }
-        stage("Quality Gate") {
-            steps {
-                script {
-                    waitForQualityGate(abortPipeline: false, credentialsId: 'SonarQube-Token')
-                }
-            }
-        }
-        stage('Install Dependencies') {
-            steps {
-                sh "npm install"
-            }
-        }
-        stage('TRIVY FS SCAN') {
-            steps {
-                sh "trivy fs . > trivyfs.txt"
-            }
-        }
-    }
-}
+// pipeline {
+//     agent any
+//     tools {
+//         jdk 'jdk17'
+//         nodejs 'node 16'
+//     }
+//     environment {
+//         SCANNER_HOME = tool 'sonar-scanner'    
+//     }
+//     stages {
+//         stage('clean workspace') {
+//             steps {
+//                 cleanWs()
+//             }
+//         }
+//         stage('Checkout from Git') {
+//             steps {
+//                 git branch: 'main', url: 'https://github.com/Abbeydauda20/swiggy-clone-app.git'
+//             }
+//         }
+//         stage("Sonarqube Analysis") {
+//             steps {
+//                 withSonarQubeEnv('SonarQube-Server') {
+//                     sh """$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=swiggy-CICD \
+//                     -Dsonar.projectKey=swiggy-CICD"""
+//                 }
+//             }
+//         }
+//         stage("Quality Gate") {
+//             steps {
+//                 script {
+//                     waitForQualityGate(abortPipeline: false, credentialsId: 'SonarQube-Token')
+//                 }
+//             }
+//         }
+//         stage('Install Dependencies') {
+//             steps {
+//                 sh "npm install"
+//             }
+//         }
+//         stage('TRIVY FS SCAN') {
+//             steps {
+//                 sh "trivy fs . > trivyfs.txt"
+//             }
+//         }
+//     }
+// }
